@@ -30,8 +30,8 @@ Both services expose:
 |-- apps/
 |   |-- payment-gateway/
 |   |-- payment-processor/
+|   |-- docker-compose.yml
 |-- k8s/
-|-- apps/docker-compose.yml
 |-- README.md
 ```
 
