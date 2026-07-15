@@ -3,8 +3,7 @@ version: "3.9"
 services:
   payment-processor:
     build:
-      context: ./Apps/payment-processor
-    container_name: payment-processor
+      context: ./payment-processor
     image: devops-challenge/payment-processor:1.0.0
     ports:
       - "8081:8080"
@@ -22,8 +21,7 @@ services:
 
   payment-gateway:
     build:
-      context: ./Apps/payment-gateway
-    container_name: payment-gateway
+      context: ./payment-gateway
     image: devops-challenge/payment-gateway:1.0.0
     ports:
       - "8080:8080"

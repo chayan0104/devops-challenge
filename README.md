@@ -27,12 +27,12 @@ Both services expose:
 
 ```text
 .
-|-- Apps/
+|-- apps/
 |   |-- payment-gateway/
-|   `-- payment-processor/
+|   |-- payment-processor/
 |-- k8s/
-|-- docker-compose.yml
-`-- README.md
+|-- apps/docker-compose.yml
+|-- README.md
 ```
 
 ## Infrastructure Included
@@ -40,7 +40,7 @@ Both services expose:
 The repository includes:
 
 - Dockerfiles for both services
-- `docker-compose.yml` for local multi-container execution
+- `apps/docker-compose.yml` for local multi-container execution
 - Kubernetes manifests under `k8s/`
 - `kustomization.yaml` for applying the full stack
 - `ConfigMap` for shared non-secret configuration
@@ -63,7 +63,7 @@ This implementation tries to balance simplicity with production awareness.
 ### 1. Run with Docker Compose
 
 ```bash
-docker compose up --build
+docker compose -f apps/docker-compose.yml up --build
 ```
 
 Once the stack is up:
@@ -111,8 +111,8 @@ curl http://localhost:8081/metrics
 ### Build the images
 
 ```bash
-docker build -t devops-challenge/payment-gateway:1.0.0 Apps/payment-gateway
-docker build -t devops-challenge/payment-processor:1.0.0 Apps/payment-processor
+docker build -t devops-challenge/payment-gateway:1.0.0 apps/payment-gateway
+docker build -t devops-challenge/payment-processor:1.0.0 apps/payment-processor
 ```
 
 If you are using `kind`, load the images:
@@ -133,6 +133,8 @@ kubectl create secret generic payments-secrets \
 ```
 
 You can also use `k8s/02-secret.example.yaml` as a template, but for real usage the secret should be created outside source control.
+
+The example secret is intentionally not included in `kustomization.yaml`, so `kubectl apply -k k8s` will not create a placeholder secret by mistake.
 
 ### Deploy everything
 
@@ -165,6 +167,7 @@ curl http://localhost:8080/metrics
 - `PodDisruptionBudget` to reduce voluntary downtime
 - `NetworkPolicy` restricting processor access to the gateway
 - Prometheus scrape annotations on both Deployments
+- HPA behavior tuning to reduce scale flapping
 
 ## Security And Reliability Notes
 

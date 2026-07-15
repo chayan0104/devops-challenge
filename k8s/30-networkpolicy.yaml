@@ -12,7 +12,10 @@ spec:
     - Egress
   ingress:
     - from:
-        - podSelector:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: payments
+          podSelector:
             matchLabels:
               app: payment-gateway
       ports:
@@ -40,10 +43,16 @@ spec:
     - Ingress
     - Egress
   ingress:
-    - {}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: payments
   egress:
     - to:
-        - podSelector:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: payments
+          podSelector:
             matchLabels:
               app: payment-processor
       ports:
