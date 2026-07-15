@@ -1,0 +1,46 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: payment-processor
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+
+processor:
+  api-key: ${PROCESSOR_API_KEY:changeme-shared-secret}
+  simulated-failure-rate-percent: ${SIMULATED_FAILURE_RATE_PERCENT:0}
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,prometheus,info
+      path-mapping:
+        health: healthz
+        prometheus: metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{requestId}] [%thread] %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.example.paymentprocessor: INFO

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-config
+  namespace: payments
+data:
+  PROCESSOR_URL: "http://payment-processor:8080"
+  PROCESSOR_CONNECT_TIMEOUT_MS: "1000"
+  PROCESSOR_READ_TIMEOUT_MS: "3000"
+  SIMULATED_FAILURE_RATE_PERCENT: "0"

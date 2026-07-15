@@ -1,0 +1,27 @@
+# Java / Maven
+/Apps/*/target/
+/Apps/*/build/
+/Apps/*/.mvn/timing.properties
+/Apps/*/.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Docker / Compose
+*.local
+
+# Kubernetes local overrides
+k8s/*.local.yaml

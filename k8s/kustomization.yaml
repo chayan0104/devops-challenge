@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payments
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secret.example.yaml
+  - 10-payment-processor-deployment.yaml
+  - 11-payment-processor-service.yaml
+  - 20-payment-gateway-deployment.yaml
+  - 21-payment-gateway-service.yaml
+  - 30-networkpolicy.yaml
+  - 40-pdb.yaml
+  - 41-hpa.yaml
