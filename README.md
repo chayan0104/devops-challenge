@@ -180,13 +180,15 @@ curl http://localhost:8080/metrics
 
 ## What I Would Improve Next
 
-If this were taken further, the next practical improvements would be:
+If this project were extended further, the next practical improvements would include:
 
-- CI/CD pipeline for build, test, image publish, and deployment
-- Image scanning and dependency vulnerability checks
-- External secret management instead of a sample Kubernetes Secret
-- Prometheus, Grafana, and centralized logging
-- Environment-specific overlays for dev, staging, and production
+- Implement a complete CI/CD pipeline (Jenkins or GitHub Actions) for automated build, testing, security scanning, image publishing, and Kubernetes deployment.
+- Integrate SonarQube for static code analysis and Trivy for container image vulnerability scanning as part of the deployment pipeline.
+- Replace Kubernetes Secrets with HashiCorp Vault or the External Secrets Operator for centralized and secure secret management.
+- Deploy a full observability stack using Prometheus and Grafana for monitoring, along with centralized logging for application and cluster visibility.
+- Introduce NGINX Ingress with TLS termination to securely expose services in a production environment.
+- Organize Kubernetes manifests using Kustomize overlays for environment-specific configurations (development, staging, and production).
+- Support advanced deployment strategies such as Canary or Blue-Green deployments to enable zero-downtime releases and safer rollouts.
 
 ## Trade-offs
 
