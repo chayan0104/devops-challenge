@@ -178,6 +178,17 @@ curl http://localhost:8080/metrics
 - Linux capabilities are dropped.
 - The gateway degrades more gracefully when the processor is slow or unavailable.
 
+## Operational Considerations
+
+The platform is designed to simplify troubleshooting during production incidents.
+
+- Health endpoints (`/healthz`) allow Kubernetes and operators to quickly determine service availability.
+- Metrics (`/metrics`) expose application telemetry for Prometheus and Grafana dashboards.
+- Startup, readiness, and liveness probes automatically detect and replace unhealthy containers.
+- Retry, timeout, and circuit breaker mechanisms reduce the impact of downstream failures.
+- Container logs can be integrated with a centralized logging solution for faster incident investigation.
+- Future enhancements include Alertmanager, distributed tracing, and correlation IDs to enable rapid root-cause analysis during on-call incidents.
+
 ## What I Would Improve Next
 
 If this project were extended further, the next practical improvements would include:
