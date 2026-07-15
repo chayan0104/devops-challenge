@@ -1,58 +1,194 @@
-# Spring Payment Microservices
+# Payment Microservices Platform
 
-This repository is a small microservices project built to show DevOps-ready delivery around a simple payment flow. The application layer is intentionally straightforward: `payment-gateway` receives payment requests and forwards them to `payment-processor`, which validates and returns the processing result. The stronger focus is on how the services are packaged, secured, deployed, observed, and operated.
+This repository contains a small payment system built around two Spring Boot services:
 
-## DevOps Brief
+- `payment-gateway` accepts payment requests
+- `payment-processor` processes them and returns the result
 
-The project is structured like a lightweight production handoff:
+The application itself is simple by design. The main goal of this repository is to show a practical DevOps-oriented setup: containerization, local reproducibility, Kubernetes deployment, service-to-service communication, health checks, metrics, and production-minded defaults.
 
-- Two independent Spring Boot services with separate Dockerfiles and runtime configuration.
-- Multi-stage container builds to keep images small and runtime-only.
-- Kubernetes manifests split by concern for easier review and change tracking.
-- Health probes, rolling updates, autoscaling, and disruption budgets for safer deployments.
-- Shared-secret based service-to-service authentication with configuration separated into `ConfigMap` and `Secret`.
-- Network policies and hardened container security settings to reduce blast radius.
-- Built-in metrics and correlation IDs to support monitoring and troubleshooting.
+## What The System Does
+
+`payment-gateway` receives a `POST /pay` request and forwards it to `payment-processor` using the `PROCESSOR_URL` environment variable.
+
+Both services expose:
+
+- `GET /healthz`
+- `GET /metrics`
 
 ## Services
 
 | Service | Image | Description |
 | --- | --- | --- |
-| payment-gateway Service A | `devops-challenge/payment-gateway:1.0.0` | HTTP entry service that accepts payment requests and forwards them to the processor. Exposes port `8080`. |
-| payment-processor Service B | `devops-challenge/payment-processor:1.0.0` | Internal backend service that processes requests from the gateway and returns the response. Exposes port `8080`. |
+| payment-gateway Service A | `devops-challenge/payment-gateway:1.0.0` | HTTP service that accepts incoming payment requests and forwards them to the payment-processor. Exposes port `8080`. |
+| payment-processor Service B | `devops-challenge/payment-processor:1.0.0` | Backend service that processes payment requests received from the payment-gateway and returns a response. Exposes port `8080`. |
 
-## What Is Included
+## Repo Structure
 
-- `docker-compose.yml` for local multi-container runs.
-- `k8s/` manifests for namespace, config, secret template, deployments, services, network policy, PDB, HPA, and kustomization.
-- Spring Boot Actuator endpoints exposed as `/healthz` and `/metrics`.
-- Resilience handling in the gateway for downstream processor failures.
+```text
+.
+|-- Apps/
+|   |-- payment-gateway/
+|   `-- payment-processor/
+|-- k8s/
+|-- docker-compose.yml
+`-- README.md
+```
 
-## Local Run
+## Infrastructure Included
+
+The repository includes:
+
+- Dockerfiles for both services
+- `docker-compose.yml` for local multi-container execution
+- Kubernetes manifests under `k8s/`
+- `kustomization.yaml` for applying the full stack
+- `ConfigMap` for shared non-secret configuration
+- `Secret` template for the processor API key
+- Deployments and Services for both applications
+- `NetworkPolicy`, `PodDisruptionBudget`, and `HorizontalPodAutoscaler`
+
+## Why It Is Set Up This Way
+
+This implementation tries to balance simplicity with production awareness.
+
+- The services are packaged separately so they can be built and deployed independently.
+- Configuration is externalized so the same images can run locally or in Kubernetes.
+- The gateway uses retry, timeout, and circuit-breaker protection for downstream failures.
+- The Kubernetes manifests are split into small files so they are easier to review and maintain.
+- The containers run with hardened security settings instead of default permissive runtime behavior.
+
+## Quick Start
+
+### 1. Run with Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
+Once the stack is up:
+
 - Gateway: `http://localhost:8080`
 - Processor: `http://localhost:8081`
 
-## Kubernetes Deploy
+### 2. Try the app
+
+Check health:
+
+```bash
+curl http://localhost:8080/healthz
+curl http://localhost:8081/healthz
+```
+
+Send a payment:
+
+```bash
+curl -X POST http://localhost:8080/pay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "acc-1001",
+    "destination": "acc-2002",
+    "amount": 250.00,
+    "currency": "INR"
+  }'
+```
+
+Check metrics:
+
+```bash
+curl http://localhost:8080/metrics
+curl http://localhost:8081/metrics
+```
+
+## Kubernetes Setup
+
+### Prerequisites
+
+- Docker
+- `kubectl`
+- A local Kubernetes cluster such as `kind` or `minikube`
+
+### Build the images
+
+```bash
+docker build -t devops-challenge/payment-gateway:1.0.0 Apps/payment-gateway
+docker build -t devops-challenge/payment-processor:1.0.0 Apps/payment-processor
+```
+
+If you are using `kind`, load the images:
+
+```bash
+kind load docker-image devops-challenge/payment-gateway:1.0.0
+kind load docker-image devops-challenge/payment-processor:1.0.0
+```
+
+### Create the shared secret
+
+```bash
+kubectl create namespace payments --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic payments-secrets \
+  --namespace payments \
+  --from-literal=PROCESSOR_API_KEY=changeme-shared-secret \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+You can also use `k8s/02-secret.example.yaml` as a template, but for real usage the secret should be created outside source control.
+
+### Deploy everything
 
 ```bash
 kubectl apply -k k8s
 ```
 
-Before applying, set a real value for `PROCESSOR_API_KEY` instead of using the sample in `k8s/02-secret.example.yaml`.
+### Access the gateway
 
-## DevOps Notes
+```bash
+kubectl -n payments port-forward svc/payment-gateway 8080:8080
+```
 
-- Containers run as non-root users with restricted privileges.
-- Deployments use readiness, liveness, and startup probes.
-- Both services run with two replicas by default.
-- `payment-gateway` can keep serving predictable `503` responses during processor failures instead of hanging.
-- Metrics are Prometheus-friendly, and logs include a request correlation ID across both services.
+Then test:
 
-## Scope
+```bash
+curl http://localhost:8080/healthz
+curl http://localhost:8080/metrics
+```
 
-This repo demonstrates deployment and operations fundamentals well, but it does not yet include a full CI/CD pipeline, centralized observability stack, ingress/TLS setup, or external secret management.
+## Kubernetes Features
+
+- `Namespace` isolation with the `payments` namespace
+- `ConfigMap` driven runtime configuration
+- `Secret` based API key injection
+- `startupProbe`, `readinessProbe`, and `livenessProbe`
+- `RollingUpdate` deployment strategy
+- Two replicas for each service by default
+- `HorizontalPodAutoscaler` for CPU-based scaling
+- `PodDisruptionBudget` to reduce voluntary downtime
+- `NetworkPolicy` restricting processor access to the gateway
+- Prometheus scrape annotations on both Deployments
+
+## Security And Reliability Notes
+
+- `payment-processor` requires an `X-API-Key` header for application traffic.
+- Containers run as non-root users.
+- Privilege escalation is disabled.
+- The root filesystem is read-only.
+- Linux capabilities are dropped.
+- The gateway degrades more gracefully when the processor is slow or unavailable.
+
+## What I Would Improve Next
+
+If this were taken further, the next practical improvements would be:
+
+- CI/CD pipeline for build, test, image publish, and deployment
+- Image scanning and dependency vulnerability checks
+- External secret management instead of a sample Kubernetes Secret
+- Prometheus, Grafana, and centralized logging
+- Environment-specific overlays for dev, staging, and production
+
+## Trade-offs
+
+This is intentionally a lightweight reference project.
+
+- Plain Kubernetes manifests are used instead of Helm.
+- Observability endpoints are exposed, but a full monitoring stack is not included in the repo.
+- The setup is optimized for local reproducibility first.
